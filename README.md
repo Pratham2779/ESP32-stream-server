@@ -1,1 +1,1 @@
-# ESP-stream-server
+# ESP32-stream-server
