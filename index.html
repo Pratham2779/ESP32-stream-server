@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -205,6 +205,132 @@
 
         ws.onerror = () => {
             updateStatus('disconnected', 'Error');
+        };
+    </script>
+</body>
+</html> -->
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32-CAM Live Stream</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom glow effects for the status dots */
+        .shadow-glow-yellow { box-shadow: 0 0 10px #eab308; }
+        .shadow-glow-green { box-shadow: 0 0 10px #22c55e; }
+        .shadow-glow-red { box-shadow: 0 0 10px #ef4444; }
+    </style>
+</head>
+<body class="text-slate-50 font-sans min-h-screen flex justify-center items-center p-4 sm:p-8 box-border selection:bg-indigo-500/30 relative overflow-hidden"
+      style="background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop'); background-size: cover; background-position: center; background-attachment: fixed;">
+
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-[2px] pointer-events-none z-0"></div>
+
+    <div class="bg-slate-900/60 p-6 sm:p-8 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] border border-white/10 w-full max-w-4xl max-h-[95vh] flex flex-col box-border backdrop-blur-2xl relative z-10 transition-all duration-500">
+        
+        <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 rounded-t-3xl opacity-80"></div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 pb-5 border-b border-white/10 gap-4 shrink-0">
+            <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white m-0 flex items-center gap-3 drop-shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-cyan-400"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+                ESP32-CAM Monitor
+            </h1>
+            
+            <div id="status-badge" class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-medium bg-white/10 border border-white/10 backdrop-blur-md transition-all duration-300 shadow-lg">
+                <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-glow-yellow shrink-0 transition-colors duration-300"></span> 
+                <span id="status-text" class="text-slate-100 font-semibold tracking-wide">Connecting...</span>
+            </div>
+        </div>
+
+        <div class="relative w-full bg-black/60 rounded-2xl overflow-hidden aspect-[4/3] max-h-[70vh] border border-white/10 flex justify-center items-center shadow-[inset_0_2px_20px_rgba(0,0,0,0.5)] backdrop-blur-md">
+            
+            <span id="waiting-text" class="text-slate-200 text-sm sm:text-base absolute text-center px-4 flex flex-col items-center gap-4">
+                <svg class="animate-spin h-10 w-10 text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span class="font-medium tracking-wide drop-shadow-md">Waiting for video stream...</span>
+            </span>
+
+            <img id="video-stream" src="" alt="Live Stream" class="w-full h-full object-contain hidden rotate-180 relative z-10" />
+        </div>
+    </div>
+
+    <script>
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl);
+        
+        const imgElement = document.getElementById('video-stream');
+        const waitingText = document.getElementById('waiting-text');
+        const statusBadge = document.getElementById('status-badge');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+
+        // Handles Tailwind class updates for the status badge
+        function updateStatus(state) {
+            // Reset classes
+            statusDot.className = 'w-2.5 h-2.5 rounded-full shrink-0 transition-colors duration-300';
+            
+            if (state === 'connected') {
+                statusDot.classList.add('bg-green-400', 'shadow-glow-green', 'animate-pulse');
+                statusText.textContent = 'Live';
+                statusBadge.classList.replace('border-white/10', 'border-green-400/40');
+                statusBadge.classList.replace('bg-white/10', 'bg-green-400/20');
+            } else if (state === 'disconnected') {
+                statusDot.classList.add('bg-red-400', 'shadow-glow-red');
+                statusText.textContent = 'Disconnected';
+                statusBadge.classList.replace('border-green-400/40', 'border-red-400/40');
+                statusBadge.classList.replace('bg-green-400/20', 'bg-red-400/20');
+                statusBadge.classList.replace('border-white/10', 'border-red-400/40');
+                statusBadge.classList.replace('bg-white/10', 'bg-red-400/20');
+            } else {
+                statusDot.classList.add('bg-yellow-400', 'shadow-glow-yellow');
+                statusText.textContent = 'Connecting...';
+                // Reset to default connecting styling
+                statusBadge.className = 'inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-sm font-medium bg-white/10 border border-white/10 backdrop-blur-md transition-all duration-300 shadow-lg';
+            }
+        }
+
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            updateStatus('connected');
+        };
+        
+        ws.onmessage = (event) => {
+            if (event.data instanceof Blob) {
+                if (imgElement.classList.contains('hidden')) {
+                    imgElement.classList.remove('hidden');
+                    waitingText.style.display = 'none';
+                }
+                
+                if (imgElement.src) {
+                    URL.revokeObjectURL(imgElement.src);
+                }
+
+                const urlObject = URL.createObjectURL(event.data);
+                imgElement.src = urlObject;
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('Disconnected from WebSocket server');
+            updateStatus('disconnected');
+            imgElement.classList.add('hidden');
+            waitingText.style.display = 'flex';
+            waitingText.innerHTML = `
+                <svg class="h-10 w-10 text-red-400 drop-shadow-[0_0_10px_rgba(248,113,113,0.5)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <span class="font-medium tracking-wide drop-shadow-md">Connection lost. Reconnecting...</span>
+            `;
+        };
+
+        ws.onerror = () => {
+            updateStatus('disconnected');
         };
     </script>
 </body>
