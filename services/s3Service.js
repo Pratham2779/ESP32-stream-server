@@ -65,4 +65,14 @@ const listRecordings = async () => {
     }
 };
 
-module.exports = { streamToS3, renameS3Object, listRecordings };
+const deleteS3Object = async (s3Key) => {
+    try {
+        await s3Client.send(new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: s3Key }));
+        return true;
+    } catch (err) {
+        console.error("[S3] Delete Error:", err.message);
+        return false;
+    }
+};
+
+module.exports = { streamToS3, renameS3Object, listRecordings, deleteS3Object };

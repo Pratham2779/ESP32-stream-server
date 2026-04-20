@@ -78,12 +78,16 @@ async function loadRecordings() {
                 let displayTitle = parts.length > 1 ? `Session: ${parts[0].split('_')[1]}` : rec.filename;
 
                 return `
-                    <div onclick="openVideoModal(this.dataset.url, '${displayTitle}')" data-url="${rec.url}" class="group p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-cyan-500/50 hover:shadow-lg transition-all flex items-center gap-3">
-                        <div class="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-500 font-bold italic">S3</div>
-                        <div class="flex-1 min-w-0">
+                    <div onclick="openVideoModal(this.dataset.url, '${displayTitle}')" data-url="${rec.url}" class="group p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-cyan-500/50 hover:shadow-lg transition-all flex items-center gap-3 relative overflow-hidden">
+                        <div class="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-500 font-bold italic shrink-0">S3</div>
+                        <div class="flex-1 min-w-0 pr-8">
                             <p class="text-sm font-semibold truncate">${displayTitle}</p>
                             <p class="text-[11px] text-slate-500">${date}</p>
                         </div>
+                        
+                        <button onclick="deleteArchive('${rec.url}', event)" class="absolute right-3 p-2 text-slate-400 hover:text-white hover:bg-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100 shadow-sm" title="Delete Archive">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>`;
             }).join('');
         }
@@ -273,3 +277,43 @@ document.getElementById('btn-record').addEventListener('click', (e) => {
         mediaRecorder.stop();
     }
 });
+
+
+
+// --- S3 Deletion Logic ---
+async function deleteArchive(fileUrl, event) {
+    // Prevent the parent div's onclick from triggering (stops the video modal from opening)
+    event.stopPropagation(); 
+    
+    if (!confirm("Are you sure you want to permanently delete this video from AWS and the database?")) {
+        return;
+    }
+    
+    const btn = event.currentTarget;
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '⏳'; 
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/recordings', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileUrl })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            // Refresh the S3 list immediately to remove the deleted item
+            loadRecordings(); 
+        } else {
+            alert("Deletion failed: " + data.message);
+            btn.innerHTML = originalIcon;
+            btn.disabled = false;
+        }
+    } catch (e) {
+        console.error("Delete request failed:", e);
+        alert("Error connecting to server.");
+        btn.innerHTML = originalIcon;
+        btn.disabled = false;
+    }
+}
