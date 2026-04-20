@@ -1,0 +1,125 @@
+# =========================
+
+# Node.js (Backend)
+
+# =========================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+
+.env
+.env.*
+!.env.example
+
+# Logs
+
+logs
+*.log
+
+# Runtime data
+
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+
+coverage/
+
+# Build output
+
+dist/
+build/
+
+# Optional npm cache
+
+.npm
+
+# =========================
+
+# React (Frontend)
+
+# =========================
+
+node_modules/
+build/
+dist/
+
+# React specific
+
+.next/
+out/
+.cache/
+
+# =========================
+
+# MongoDB
+
+# =========================
+
+data/
+*.db
+*.sqlite
+
+# =========================
+
+# OS / Editor files
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# VS Code
+
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# JetBrains
+
+.idea/
+
+# =========================
+
+# Misc
+
+# =========================
+
+*.swp
+*.swo
+*~
+
+# =========================
+
+# Uploads (important for your CCTV project)
+
+# =========================
+
+uploads/
+recordings/
+videos/
+images/
+
+# =========================
+
+# Secrets / Keys
+
+# =========================
+
+*.pem
+*.key
+*.crt
+*.pfx
+
+# AWS / Firebase configs
+
+aws-exports.js
+firebaseConfig.js
